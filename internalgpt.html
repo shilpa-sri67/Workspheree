@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Assistant — WorkSphere AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0b0d14;
+  --surface: #111520;
+  --surface2: #161b2e;
+  --border: rgba(255,255,255,0.07);
+  --accent: #a78bfa;
+  --blue: #4f8ef7;
+  --green: #34d399;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --dim: #374151;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(167,139,250,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(79,142,247,0.07) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+/* TOPBAR */
+.topbar {
+  position: relative; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px;
+  background: rgba(11,13,20,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tb-left { display: flex; align-items: center; gap: 14px; }
+.back-btn { display: flex; align-items: center; gap: 5px; color: var(--muted); text-decoration: none; font-size: 0.8rem; transition: color .2s; }
+.back-btn:hover { color: var(--text); }
+.vdiv { width: 1px; height: 18px; background: var(--border); }
+.mod-badge { display: flex; align-items: center; gap: 9px; }
+.mod-ico {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+}
+.mod-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; color: #fff; }
+.mod-sub  { font-size: 0.68rem; color: var(--muted); }
+.tb-right { display: flex; align-items: center; gap: 10px; }
+.role-badge {
+  font-size: 0.72rem; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 4px 11px; border-radius: 100px;
+}
+.role-badge b { color: #a78bfa; font-weight: 600; }
+.mode-toggle { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+.mode-btn {
+  padding: 4px 11px; border-radius: 6px; font-size: 0.72rem; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; border: none;
+  color: var(--muted); background: transparent; transition: all .18s;
+}
+.mode-btn.active { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.18);
+  color: var(--green); padding: 4px 12px; border-radius: 100px; font-size: 0.72rem; font-weight: 500;
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+  animation: blink 2s ease infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* LAYOUT */
+.layout { flex: 1; display: flex; overflow: hidden; position: relative; z-index: 1; }
+
+/* LEFT COLUMN */
+.left-col {
+  width: 40%; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  background: rgba(17,21,32,0.55);
+  overflow: hidden;
+}
+
+.col-hdr {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.col-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.93rem; color: #fff; letter-spacing: -.01em; }
+.col-count { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+.add-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25);
+  color: #a78bfa; padding: 6px 12px; border-radius: 7px;
+  font-size: 0.76rem; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.add-btn:hover { background: rgba(167,139,250,0.2); }
+
+.lib-search { padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.lib-search input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 11px; font-size: 0.8rem;
+  color: var(--text); outline: none;
+}
+.lib-search input:focus { border-color: rgba(167,139,250,.3); }
+
+.source-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.src-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .15s;
+}
+.src-item:hover { background: rgba(255,255,255,.03); }
+.s-icon {
+  width: 30px; height: 30px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; flex-shrink: 0;
+}
+.s-icon.policy { background: rgba(79,142,247,.12); }
+.s-icon.email { background: rgba(52,211,153,.12); }
+.s-icon.announce { background: rgba(251,146,60,.12); }
+.s-info { flex: 1; min-width: 0; }
+.s-title { font-size: 0.81rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-meta { display: flex; gap: 7px; margin-top: 2px; flex-wrap: wrap; }
+.type-tag { font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+.type-tag.policy { background: rgba(79,142,247,.12); color: #4f8ef7; }
+.type-tag.announce { background: rgba(251,146,60,.12); color: #fb923c; }
+
+/* RIGHT COLUMN */
+.right-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.chat-hdr {
+  padding: 13px 20px 11px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-hdr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.nexus-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; color: #fff; }
+.int-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(79,142,247,.08); border: 1px solid rgba(79,142,247,.18);
+  color: var(--blue); padding: 3px 9px; border-radius: 100px; font-size: 0.67rem;
+}
+.chat-hint { font-size: 0.72rem; color: var(--dim); margin-bottom: 9px; }
+
+/* SUGGESTIONS - DYNAMIC */
+.suggestions-section {
+  padding: 0 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.suggestions-title {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: #9ca3af;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.73rem;
+  cursor: pointer;
+  transition: all .18s;
+}
+.chip:hover {
+  background: rgba(167,139,250,.12);
+  border-color: rgba(167,139,250,.4);
+  color: #c4b5fd;
+  transform: translateY(-1px);
+}
+
+/* MESSAGES */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-behavior: smooth;
+}
+.messages::-webkit-scrollbar { width: 3px; }
+.messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.06); border-radius: 3px; }
+
+.welcome-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 40px 30px;
+}
+.wi {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(167,139,250,.1);
+  border: 1px solid rgba(167,139,250,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+.welcome-msg h3 { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+.welcome-msg p { font-size: .78rem; color: var(--muted); max-width: 320px; }
+
+.msg-row { display: flex; gap: 10px; align-items: flex-start; animation: fadeSlide 0.25s ease; }
+.msg-row.user { flex-direction: row-reverse; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; flex-shrink: 0;
+}
+.msg-av.ai { background: rgba(167,139,250,.12); border: 1px solid rgba(167,139,250,.2); font-size: .85rem; }
+.msg-av.user { background: linear-gradient(135deg, #4f8ef7, #a78bfa); font-weight: 600; color: #fff; font-size: .7rem; }
+
+.msg-body { max-width: 75%; display: flex; flex-direction: column; }
+.msg-row.user .msg-body { align-items: flex-end; }
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: .85rem;
+  line-height: 1.6;
+}
+.msg-row.ai .bubble { background: var(--surface); border: 1px solid var(--border); border-top-left-radius: 4px; color: #d1d5db; }
+.msg-row.user .bubble { background: #a78bfa; border-top-right-radius: 4px; color: #fff; }
+.bubble p { margin-bottom: 6px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul { padding-left: 20px; margin: 6px 0; }
+.bubble li { margin: 4px 0; }
+.bubble strong { color: #fff; font-weight: 600; }
+
+.msg-time { font-size: .62rem; color: var(--dim); margin-top: 4px; }
+
+.msg-sources { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.src-pill {
+  font-size: .62rem; background: rgba(79,142,247,.1);
+  border: 1px solid rgba(79,142,247,.2); color: var(--blue);
+  padding: 2px 8px; border-radius: 4px; cursor: pointer;
+}
+.src-pill:hover { background: rgba(79,142,247,.2); }
+
+.typing-dots { display: flex; gap: 5px; padding: 6px 2px; }
+.typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: #a78bfa; animation: typingBounce 1.2s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes typingBounce { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+
+/* INPUT */
+.input-bar {
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(11,13,20,.85);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+.input-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px 8px 6px 16px;
+}
+#chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .85rem;
+  resize: none;
+  max-height: 100px;
+  line-height: 1.5;
+  padding: 8px 0;
+}
+#chat-input::placeholder { color: var(--dim); }
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #a78bfa;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+}
+.send-btn:hover { background: #c4b5fd; transform: scale(1.02); }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.input-hint { font-size: .65rem; color: var(--dim); text-align: center; margin-top: 8px; }
+
+/* MODAL */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: #111520; border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px; padding: 28px; width: 100%; max-width: 460px;
+}
+.modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; margin-bottom: 4px; }
+.modal-sub { font-size: .78rem; color: var(--muted); margin-bottom: 18px; }
+.mfield { margin-bottom: 14px; }
+.mfield label { display: block; font-size: .75rem; font-weight: 500; margin-bottom: 5px; color: #c9ccd4; }
+.mfield input, .mfield select, .mfield textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .8rem;
+  color: var(--text);
+  outline: none;
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.m-btn { flex: 1; padding: 9px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; }
+.m-btn.pri { background: #a78bfa; color: #fff; }
+.m-btn.gho { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+
+@media (max-width: 700px) { .left-col { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <a href="#" class="back-btn" onclick="return false;">← Back</a>
+    <div class="vdiv"></div>
+    <div class="mod-badge">
+      <div class="mod-ico">🤖</div>
+      <div>
+        <div class="mod-name">Nexus Assistant</div>
+        <div class="mod-sub">Internal GPT · Secure Company AI</div>
+      </div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="role-badge">Logged in as <b>Manager</b></div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('qa',this)">Q&amp;A</button>
+      <button class="mode-btn" onclick="setMode('summarize',this)">Summarize</button>
+      <button class="mode-btn" onclick="setMode('draft',this)">Draft Email</button>
+    </div>
+    <div class="status-pill"><div class="status-dot"></div>AI Online</div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT: Knowledge Library -->
+  <div class="left-col">
+    <div class="col-hdr">
+      <div><div class="col-title">Company Knowledge</div><div class="col-count" id="doc-count">12 documents</div></div>
+      <button class="add-btn" onclick="openModal()">+ Add Source</button>
+    </div>
+    <div class="lib-search"><input type="text" id="search-input" placeholder="Search documents..." oninput="filterDocs(this.value)"></div>
+    <div class="source-list" id="source-list"></div>
+  </div>
+
+  <!-- RIGHT: Chat -->
+  <div class="right-col">
+    <div class="chat-hdr">
+      <div class="chat-hdr-top">
+        <div class="nexus-title">Nexus Assistant – For Your Company Only</div>
+        <div class="int-badge">🔒 Internal Data Only</div>
+      </div>
+      <div class="chat-hint">Answers based on company documents, policies, and announcements.</div>
+    </div>
+
+    <!-- Dynamic Suggestions Section -->
+    <div class="suggestions-section">
+      <div class="suggestions-title">✨ Suggested questions</div>
+      <div class="chips" id="suggestions-container"></div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome-msg" id="welcome">
+        <div class="wi">🤖</div>
+        <h3>Nexus Assistant is ready</h3>
+        <p>Ask me anything about company policies, hiring, announcements, or any internal topic.</p>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="chat-input" rows="1" placeholder="Ask me anything about the company..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">🔒 Private · Secure · Company data only</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">Add Knowledge Source</div>
+    <div class="modal-sub">Add policies, announcements, or documents to the company knowledge base.</div>
+    <div class="mfield"><label>Title</label><input type="text" id="m-title" placeholder="e.g., Hiring Plan 2025"></div>
+    <div class="mfield"><label>Type</label><select id="m-type"><option value="policy">Policy</option><option value="announce">Announcement</option><option value="process">Process</option><option value="email">Email</option></select></div>
+    <div class="mfield"><label>Owner</label><input type="text" id="m-owner" placeholder="e.g., HR Team"></div>
+    <div class="mfield"><label>Content</label><textarea id="m-content" rows="3" placeholder="Document text..."></textarea></div>
+    <div class="modal-actions"><button class="m-btn gho" onclick="closeModal()">Cancel</button><button class="m-btn pri" onclick="addSource()">Add to Knowledge</button></div>
+  </div>
+</div>
+
+<script>
+// ==================== COMPANY KNOWLEDGE BASE ====================
+const companyDocs = [
+  { id: 1, type: 'policy', title: 'Leave & Attendance Policy', owner: 'HR Team', content: '18 days annual leave, 6 casual days. WFH 3 days/week with manager approval. Sick leave requires medical certificate for 3+ days.' },
+  { id: 2, type: 'announce', title: 'Q2 2025 Hiring Plan', owner: 'Talent Acquisition', content: 'We are hiring 15 engineers (backend, frontend, ML), 5 product managers, and 3 sales reps. Hiring starts April 15. Referral bonuses: ₹50,000 for engineers, ₹30,000 for others. Interviews: 3 rounds + system design.' },
+  { id: 3, type: 'announce', title: 'Company All-Hands Summary', owner: 'CEO Office', content: 'March 27 All-Hands: Revenue up 32% YoY. New AI product launch in May. Office expansion in Bangalore and Hyderabad. Q2 goal: launch Nexus AI assistant to all clients.' },
+  { id: 4, type: 'policy', title: 'Remote Work Policy', owner: 'People Ops', content: 'Remote work allowed for up to 3 days per week. Fully remote roles available for senior engineers. Mandatory in-office days: Tuesday & Thursday for hybrid employees.' },
+  { id: 5, type: 'announce', title: 'Performance Review Cycle', owner: 'HR Team', content: 'Q1 performance reviews due April 10. Self-assessment deadline: April 5. Manager reviews: April 8-10. Promotions and salary adjustments effective May 1.' },
+  { id: 6, type: 'process', title: 'Backend Deployment Runbook', owner: 'DevOps', content: 'Deployments happen on Wednesdays. Use CI/CD pipeline; rollback available via ./rollback.sh. Post-deploy monitoring for 30 mins.' },
+  { id: 7, type: 'announce', title: 'Wellness Program Launch', owner: 'HR Team', content: 'New wellness program starting April 1: ₹10,000 annual wellness allowance for gym, meditation apps, mental health sessions. 4 mental health days per year.' },
+  { id: 8, type: 'policy', title: 'Expense Reimbursement', owner: 'Finance', content: 'Expenses under ₹5,000 auto-approved. Above requires manager approval. Submit within 7 days via Zoho Expense.' },
+  { id: 9, type: 'announce', title: 'Engineering Hackathon', owner: 'Engineering', content: 'Annual hackathon April 20-22. Theme: AI for productivity. Prizes: ₹1,00,000 for winning team. All engineers encouraged to participate.' },
+  { id: 10, type: 'announce', title: 'Internship Program 2025', owner: 'Talent Team', content: 'Summer internship applications open April 1 for college students. 20 positions across engineering, product, design. Duration: May-July. Stipend: ₹40,000/month.' }
+];
+
+let currentMode = 'qa';
+let chatHistory = [];
+let isLoading = false;
+let filteredDocs = [...companyDocs];
+
+// Render knowledge base
+function renderDocs() {
+  const container = document.getElementById('source-list');
+  container.innerHTML = filteredDocs.map(d => `
+    <div class="src-item" onclick="selectAndAsk('${d.title}')">
+      <div class="s-icon ${d.type}">${d.type === 'policy' ? '📋' : d.type === 'announce' ? '📢' : '📄'}</div>
+      <div class="s-info">
+        <div class="s-title">${d.title}</div>
+        <div class="s-meta">
+          <span class="type-tag ${d.type}">${d.type.charAt(0).toUpperCase() + d.type.slice(1)}</span>
+          <span class="s-owner">${d.owner}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('doc-count').innerHTML = `${companyDocs.length} documents`;
+}
+
+function filterDocs(q) {
+  const lq = q.toLowerCase();
+  filteredDocs = companyDocs.filter(d => d.title.toLowerCase().includes(lq) || d.content.toLowerCase().includes(lq));
+  renderDocs();
+}
+
+function selectAndAsk(title) {
+  document.getElementById('chat-input').value = `Tell me about ${title}`;
+  sendMessage();
+}
+
+// ==================== DYNAMIC SUGGESTIONS ====================
+function updateSuggestions() {
+  const container = document.getElementById('suggestions-container');
+  const suggestions = [
+    "What are the top company announcements?",
+    "When does hiring start?",
+    "Tell me about the new wellness program",
+    "What's the leave policy?",
+    "Summarize the all-hands meeting",
+    "How do I submit expenses?",
+    "What's the internship program?",
+    "When are performance reviews?"
+  ];
+  container.innerHTML = suggestions.map(s => `<div class="chip" onclick="sendQuick('${s}')">${s}</div>`).join('');
+}
+
+// ==================== AI RESPONSE GENERATOR (Company-focused) ====================
+function getCompanyAnswer(question, mode) {
+  const lowerQ = question.toLowerCase();
+  
+  // Find relevant documents
+  const relevant = companyDocs.filter(d => 
+    lowerQ.includes(d.title.toLowerCase().split(' ')[0]) ||
+    lowerQ.includes(d.type) ||
+    d.content.toLowerCase().split(' ').some(w => w.length > 5 && lowerQ.includes(w))
+  ).slice(0, 4);
+  
+  // Build context
+  const context = relevant.map(d => `[${d.type.toUpperCase()}] ${d.title} (${d.owner}):\n${d.content}`).join('\n\n');
+  
+  // Generate intelligent responses based on question type
+  if (lowerQ.includes('hiring') || lowerQ.includes('when does hiring start') || lowerQ.includes('recruitment')) {
+    const hiringDoc = companyDocs.find(d => d.title.includes('Hiring'));
+    return {
+      text: `**🎯 Hiring Update**\n\n${hiringDoc?.content || 'Hiring plans are being finalized. Check with HR for details.'}\n\n**Key dates:** Applications open April 15. Referral bonuses available. Interviews: 3 rounds + system design for engineering roles.\n\nWant me to share the referral process?`,
+      sources: [hiringDoc || companyDocs[1]]
+    };
+  }
+  
+  if (lowerQ.includes('top company announcements') || lowerQ.includes('what are the top things happening')) {
+    const announcements = companyDocs.filter(d => d.type === 'announce').slice(0, 3);
+    return {
+      text: `**📢 Latest Company Announcements:**\n\n${announcements.map((a, i) => `${i+1}. **${a.title}** (${a.owner}): ${a.content.substring(0, 120)}...`).join('\n\n')}\n\nAnything specific you'd like to know more about?`,
+      sources: announcements
+    };
+  }
+  
+  if (lowerQ.includes('wellness') || lowerQ.includes('wellness program')) {
+    const wellness = companyDocs.find(d => d.title.includes('Wellness'));
+    return {
+      text: `**🌿 Wellness Program Update**\n\n${wellness?.content || 'Wellness program details available on HR portal.'}\n\n**Benefits include:** ₹10,000 annual wellness allowance, 4 mental health days, free therapy sessions via partner platform.\n\nWould you like to know how to claim the allowance?`,
+      sources: [wellness || companyDocs[6]]
+    };
+  }
+  
+  if (lowerQ.includes('leave') || lowerQ.includes('pto') || lowerQ.includes('vacation')) {
+    const leave = companyDocs.find(d => d.title.includes('Leave'));
+    return {
+      text: `**🏖️ Leave & Attendance Policy**\n\n${leave?.content || 'Check HR policy for leave details.'}\n\n**Summary:** 18 days annual leave + 6 casual days. WFH up to 3 days/week with approval. Sick leave requires medical certificate for 3+ days.\n\nNeed help requesting time off?`,
+      sources: [leave || companyDocs[0]]
+    };
+  }
+  
+  if (lowerQ.includes('all-hands') || lowerQ.includes('company meeting')) {
+    const allHands = companyDocs.find(d => d.title.includes('All-Hands'));
+    return {
+      text: `**🎤 All-Hands Summary (March 27)**\n\n${allHands?.content || 'All-Hands details available in company announcements.'}\n\n**Highlights:** Revenue +32% YoY, new AI product launch in May, office expansion in Bangalore and Hyderabad. Q2 goal: launch Nexus AI assistant to clients.`,
+      sources: [allHands || companyDocs[2]]
+    };
+  }
+  
+  if (lowerQ.includes('expense') || lowerQ.includes('reimbursement')) {
+    const expense = companyDocs.find(d => d.title.includes('Expense'));
+    return {
+      text: `**💰 Expense Reimbursement Policy**\n\n${expense?.content || 'Expense policy available in Finance section.'}\n\n**Key points:** Under ₹5,000 auto-approved. Above requires manager pre-approval. Submit within 7 days via Zoho Expense with receipts.`,
+      sources: [expense || companyDocs[7]]
+    };
+  }
+  
+  if (lowerQ.includes('internship') || lowerQ.includes('intern')) {
+    const intern = companyDocs.find(d => d.title.includes('Internship'));
+    return {
+      text: `**🎓 Internship Program 2025**\n\n${intern?.content || 'Internship applications opening soon.'}\n\n**Details:** 20 positions across engineering, product, design. Duration: May-July. Stipend: ₹40,000/month. Applications open April 1.\n\nRefer a candidate? Let me know!`,
+      sources: [intern || companyDocs[9]]
+    };
+  }
+  
+  if (lowerQ.includes('performance review') || lowerQ.includes('appraisal')) {
+    const review = companyDocs.find(d => d.title.includes('Performance'));
+    return {
+      text: `**📊 Performance Review Cycle (Q1)**\n\n${review?.content || 'Performance review schedule available on HR portal.'}\n\n**Timeline:** Self-assessment: April 5 | Manager reviews: April 8-10 | Results: May 1 with salary adjustments.\n\nPrepare your achievements list for the review.`,
+      sources: [review || companyDocs[4]]
+    };
+  }
+  
+  if (lowerQ.includes('hackathon')) {
+    const hackathon = companyDocs.find(d => d.title.includes('Hackathon'));
+    return {
+      text: `**💻 Engineering Hackathon**\n\n${hackathon?.content || 'Hackathon details coming soon.'}\n\n**Theme:** AI for Productivity | **Dates:** April 20-22 | **Prize:** ₹1,00,000 for winning team. All engineers welcome to participate.\n\nWant to know how to register?`,
+      sources: [hackathon || companyDocs[8]]
+    };
+  }
+  
+  // If we have relevant docs, use them
+  if (relevant.length > 0) {
+    const mainDoc = relevant[0];
+    let responseText = `**📄 ${mainDoc.title}** (${mainDoc.owner})\n\n${mainDoc.content}`;
+    if (relevant.length > 1) {
+      responseText += `\n\n**Related:** ${relevant.slice(1).map(d => d.title).join(', ')}`;
+    }
+    if (mode === 'summarize') {
+      responseText = `**Summary of ${mainDoc.title}:**\n• ${mainDoc.content.split('. ').slice(0, 3).join('\n• ')}`;
+    } else if (mode === 'draft') {
+      responseText = `**Subject:** Update regarding ${mainDoc.title}\n\nDear team,\n\nI wanted to share an update: ${mainDoc.content.substring(0, 150)}...\n\nPlease review and let me know if you have any questions.\n\nBest,\nNexus Assistant`;
+    }
+    return { text: responseText, sources: relevant };
+  }
+  
+  // Fallback: intelligent company-focused response
+  return {
+    text: `I couldn't find specific information about that in the current knowledge base. However, I can help with:\n\n• **Company policies** (leave, remote work, expenses)\n• **Announcements** (hiring, all-hands, wellness program)\n• **Processes** (deployment, performance reviews)\n• **Events** (hackathon, internship program)\n\nWhat would you like to know?`,
+    sources: []
+  };
+}
+
+// ==================== CHAT FUNCTIONS ====================
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function hideWelcome() { const w = document.getElementById('welcome'); if (w) w.remove(); }
+
+function getTime() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+function appendMessage(role, text, sources = []) {
+  hideWelcome();
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+  
+  const avatar = document.createElement('div');
+  avatar.className = `msg-av ${role}`;
+  avatar.textContent = role === 'ai' ? '🤖' : 'JD';
+  
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  // Convert markdown-style formatting
+  let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  bubble.innerHTML = formatted;
+  
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = getTime();
+  
+  body.appendChild(bubble);
+  body.appendChild(time);
+  
+  if (role === 'ai' && sources.length > 0) {
+    const srcDiv = document.createElement('div');
+    srcDiv.className = 'msg-sources';
+    srcDiv.innerHTML = `<span style="font-size:.65rem; color:var(--muted);">📚 Sources:</span> ` + 
+      sources.map(s => `<span class="src-pill" onclick="selectAndAsk('${s.title}')">${s.title}</span>`).join('');
+    body.appendChild(srcDiv);
+  }
+  
+  row.appendChild(avatar);
+  row.appendChild(body);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  hideWelcome();
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.id = 'typing-indicator';
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-av ai';
+  avatar.textContent = '🤖';
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  body.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(body);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const typing = document.getElementById('typing-indicator');
+  if (typing) typing.remove();
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  
+  appendMessage('user', text);
+  showTyping();
+  
+  // Simulate AI thinking and generate company-focused response
+  setTimeout(() => {
+    removeTyping();
+    const response = getCompanyAnswer(text, currentMode);
+    appendMessage('ai', response.text, response.sources);
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }, 400);
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// MODAL functions
+function openModal() { document.getElementById('overlay').classList.add('open'); }
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+function addSource() {
+  const title = document.getElementById('m-title').value.trim();
+  const type = document.getElementById('m-type').value;
+  const owner = document.getElementById('m-owner').value.trim() || 'General';
+  const content = document.getElementById('m-content').value.trim();
+  if (!title || !content) { alert('Please fill title and content.'); return; }
+  const newId = companyDocs.length + 1;
+  companyDocs.push({ id: newId, type, title, owner, content });
+  filteredDocs = [...companyDocs];
+  renderDocs();
+  closeModal();
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-content').value = '';
+  sendQuick(`I just added "${title}" to the knowledge base. Can you confirm?`);
+}
+
+// Initialize
+renderDocs();
+updateSuggestions();
+</script>
+</body>
+</html>

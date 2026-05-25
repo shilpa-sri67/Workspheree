@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkSphere — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-deep: #050b18;
+    --bg-card: #0d1628;
+    --bg-card2: #111e35;
+    --bg-hover: #162240;
+    --border: rgba(99,179,237,0.12);
+    --border-bright: rgba(99,179,237,0.28);
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-violet: #818cf8;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-red: #f43f5e;
+    --text-primary: #e8f0fe;
+    --text-secondary: #7e9cc0;
+    --text-muted: #4a6580;
+    --gradient-main: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #818cf8 100%);
+    --gradient-card: linear-gradient(145deg, #0d1628 0%, #111e35 100%);
+    --glow-blue: 0 0 24px rgba(59,130,246,0.25);
+    --glow-cyan: 0 0 24px rgba(6,182,212,0.25);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content:'';
+    position:fixed; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 700px 500px at 10% 20%, rgba(59,130,246,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 400px at 90% 80%, rgba(129,140,248,0.05) 0%, transparent 70%);
+    z-index:0;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; left:0; top:0; bottom:0; width:220px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display:flex; flex-direction:column; gap:4px;
+    padding:24px 12px; z-index:100;
+  }
+
+  .sidebar-logo {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px 20px;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem;
+    background: var(--gradient-main);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+
+  .sidebar-logo .logo-icon {
+    width:32px; height:32px; border-radius:8px;
+    background: var(--gradient-main);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.9rem; color:#fff; -webkit-text-fill-color:#fff;
+    box-shadow: var(--glow-blue);
+  }
+
+  .nav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px; border-radius:10px;
+    font-size:0.86rem; font-weight:500; color:var(--text-secondary);
+    cursor:pointer; transition:all 0.2s; text-decoration:none;
+    position:relative;
+  }
+
+  .nav-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.12));
+    color:#fff; border: 1px solid var(--border-bright);
+  }
+
+  .nav-item.active::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:60%; border-radius:2px;
+    background: var(--gradient-main);
+  }
+
+  .nav-icon { font-size:1rem; width:18px; text-align:center; }
+  .nav-label { flex:1; }
+  .nav-badge {
+    background: var(--accent-red); color:#fff;
+    font-size:0.7rem; padding:1px 6px; border-radius:20px; font-weight:700;
+  }
+
+  .sidebar-section {
+    font-size:0.68rem; font-weight:700; color:var(--text-muted);
+    letter-spacing:0.1em; text-transform:uppercase;
+    padding:14px 14px 4px;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left:220px; min-height:100vh;
+    display:flex; flex-direction:column;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position:sticky; top:0; z-index:90;
+    background: rgba(5,11,24,0.85);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:0 28px;
+    display:flex; align-items:center; gap:16px; height:64px;
+  }
+
+  .topbar-greeting { flex:1; }
+  .topbar-greeting h2 {
+    font-family:'Syne',sans-serif; font-size:1rem; font-weight:700;
+    color:var(--text-primary);
+  }
+  .topbar-greeting p { font-size:0.78rem; color:var(--text-secondary); }
+
+  /* ── STRESS BADGE in topbar ── */
+  .stress-badge {
+    display:flex; align-items:center; gap:8px;
+    background: linear-gradient(135deg, rgba(244,63,94,0.18), rgba(251,113,133,0.1));
+    border:1px solid rgba(244,63,94,0.35);
+    border-radius:30px; padding:6px 14px;
+    cursor:pointer; position:relative;
+  }
+
+  .stress-badge.low {
+    background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(52,211,153,0.1));
+    border-color:rgba(16,185,129,0.35);
+  }
+  .stress-badge.medium {
+    background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.1));
+    border-color:rgba(245,158,11,0.35);
+  }
+
+  .stress-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:var(--accent-red); animation:pulse-dot 1.5s infinite;
+  }
+  .stress-badge.low .stress-dot { background:var(--accent-green); }
+  .stress-badge.medium .stress-dot { background:var(--accent-amber); }
+
+  @keyframes pulse-dot {
+    0%,100%{opacity:1;transform:scale(1);}
+    50%{opacity:0.6;transform:scale(1.3);}
+  }
+
+  .stress-text { font-size:0.78rem; font-weight:600; }
+  .stress-badge.low .stress-text { color:var(--accent-green); }
+  .stress-badge.medium .stress-text { color:var(--accent-amber); }
+  .stress-badge .stress-text { color:var(--accent-red); }
+
+  .stress-val { font-family:'Syne',sans-serif; font-weight:800; font-size:0.9rem; }
+
+  /* topbar actions */
+  .topbar-actions { display:flex; align-items:center; gap:10px; }
+  .icon-btn {
+    width:38px; height:38px; border-radius:10px;
+    background:var(--bg-card2); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.2s; font-size:1rem;
+  }
+  .icon-btn:hover { background:var(--bg-hover); border-color:var(--border-bright); }
+
+  .avatar {
+    width:38px; height:38px; border-radius:10px;
+    background: var(--gradient-main);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:0.85rem;
+    cursor:pointer; box-shadow: var(--glow-blue);
+  }
+
+  /* ── NOTICES BAR ── */
+  .notices-bar {
+    background: linear-gradient(90deg, rgba(59,130,246,0.08), rgba(6,182,212,0.08), rgba(129,140,248,0.08));
+    border-bottom: 1px solid var(--border);
+    padding:0 28px;
+    display:flex; align-items:center; gap:12px; height:40px;
+    overflow:hidden;
+  }
+
+  .notices-label {
+    font-size:0.72rem; font-weight:700; letter-spacing:0.08em;
+    color:var(--accent-cyan); text-transform:uppercase; white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .notices-scroll {
+    display:flex; gap:32px; animation:scroll-notices 30s linear infinite;
+    font-size:0.8rem; color:var(--text-secondary); white-space:nowrap;
+  }
+
+  .notices-scroll span { display:flex; align-items:center; gap:6px; }
+  .notices-scroll .dot { color:var(--accent-cyan); }
+
+  @keyframes scroll-notices {
+    0%{transform:translateX(0);}
+    100%{transform:translateX(-50%);}
+  }
+
+  /* ── CONTENT ── */
+  .content { padding:24px 28px; display:flex; flex-direction:column; gap:24px; flex:1; }
+
+  /* ── STAT CARDS ── */
+  .stat-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
+  }
+
+  .stat-card {
+    background: var(--gradient-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px;
+    display:flex; flex-direction:column; gap:10px;
+    position:relative; overflow:hidden; transition:all 0.25s;
+  }
+
+  .stat-card:hover { border-color:var(--border-bright); transform:translateY(-2px); box-shadow:var(--glow-blue); }
+
+  .stat-card::after {
+    content:''; position:absolute; top:0; right:0;
+    width:80px; height:80px; border-radius:50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.1), transparent);
+    transform:translate(30%,-30%);
+  }
+
+  .stat-top { display:flex; align-items:center; justify-content:space-between; }
+  .stat-icon {
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+  }
+  .stat-icon.blue { background:rgba(59,130,246,0.18); }
+  .stat-icon.cyan { background:rgba(6,182,212,0.18); }
+  .stat-icon.green { background:rgba(16,185,129,0.18); }
+  .stat-icon.amber { background:rgba(245,158,11,0.18); }
+  .stat-icon.red { background:rgba(244,63,94,0.18); }
+  .stat-icon.violet { background:rgba(129,140,248,0.18); }
+
+  .stat-badge {
+    font-size:0.68rem; font-weight:700; padding:3px 8px;
+    border-radius:20px; letter-spacing:0.04em;
+  }
+  .stat-badge.sprint { background:rgba(59,130,246,0.2); color:var(--accent-blue); border:1px solid rgba(59,130,246,0.3); }
+  .stat-badge.completed { background:rgba(16,185,129,0.2); color:var(--accent-green); border:1px solid rgba(16,185,129,0.3); }
+  .stat-badge.attention { background:rgba(244,63,94,0.2); color:var(--accent-red); border:1px solid rgba(244,63,94,0.3); }
+  .stat-badge.health { background:rgba(129,140,248,0.2); color:var(--accent-violet); border:1px solid rgba(129,140,248,0.3); }
+
+  .stat-num {
+    font-family:'Syne',sans-serif; font-size:2rem; font-weight:800;
+    line-height:1;
+  }
+  .stat-num span { font-size:1rem; font-weight:500; color:var(--text-secondary); }
+
+  .stat-label { font-size:0.8rem; color:var(--text-secondary); }
+  .stat-sub { font-size:0.72rem; margin-top:2px; }
+  .stat-sub.up { color:var(--accent-green); }
+  .stat-sub.warn { color:var(--accent-red); }
+
+  /* ── GRID LAYOUT ── */
+  .mid-grid { display:grid; grid-template-columns:1fr 340px; gap:20px; }
+  .bottom-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+
+  /* ── CARD BASE ── */
+  .card {
+    background: var(--gradient-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden;
+  }
+
+  .card-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 14px;
+  }
+
+  .card-title {
+    font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:700;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .card-title-icon { font-size:1rem; }
+
+  .card-action {
+    font-size:0.75rem; color:var(--accent-blue); cursor:pointer;
+    padding:4px 10px; border-radius:6px; border:1px solid rgba(59,130,246,0.25);
+    transition:all 0.2s;
+  }
+  .card-action:hover { background:rgba(59,130,246,0.1); }
+
+  /* ── CHART CARD ── */
+  .chart-wrap { padding:0 20px 20px; }
+  .chart-tabs {
+    display:flex; gap:8px; padding:0 20px 14px;
+  }
+  .chart-tab {
+    font-size:0.75rem; padding:5px 12px; border-radius:8px; cursor:pointer;
+    color:var(--text-muted); border:1px solid transparent; transition:all 0.2s;
+  }
+  .chart-tab.active {
+    background:rgba(59,130,246,0.15); color:var(--accent-blue);
+    border-color:rgba(59,130,246,0.3);
+  }
+
+  /* ── WORKLOAD TABLE ── */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  thead tr { border-bottom:1px solid var(--border); }
+  thead th {
+    text-align:left; padding:10px 16px;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.07em;
+    text-transform:uppercase; color:var(--text-muted);
+  }
+  tbody tr {
+    border-bottom:1px solid rgba(99,179,237,0.06);
+    transition:background 0.15s; cursor:pointer;
+  }
+  tbody tr:hover { background:var(--bg-hover); }
+  tbody tr:last-child { border-bottom:none; }
+  td { padding:11px 16px; color:var(--text-secondary); }
+  td:first-child { color:var(--text-primary); font-weight:600; }
+
+  .stress-pill {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:22px; border-radius:6px;
+    font-size:0.72rem; font-weight:800;
+  }
+  .stress-pill.high { background:rgba(244,63,94,0.2); color:var(--accent-red); }
+  .stress-pill.med { background:rgba(245,158,11,0.2); color:var(--accent-amber); }
+  .stress-pill.low2 { background:rgba(16,185,129,0.2); color:var(--accent-green); }
+
+  .status-dot {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:0.75rem; font-weight:600;
+  }
+  .status-dot::before {
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:var(--accent-green);
+  }
+  .status-dot.away::before { background:var(--accent-amber); }
+  .status-dot.leave::before { background:var(--accent-red); }
+
+  /* ── WELLBEING ASSISTANT ── */
+  .wellbeing-card { display:flex; flex-direction:column; }
+
+  .wellbeing-chat {
+    padding:16px 18px; display:flex; flex-direction:column; gap:10px;
+    max-height:280px; overflow-y:auto; flex:1;
+  }
+
+  .wellbeing-chat::-webkit-scrollbar { width:4px; }
+  .wellbeing-chat::-webkit-scrollbar-track { background:transparent; }
+  .wellbeing-chat::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+  .chat-msg {
+    display:flex; gap:8px; align-items:flex-start;
+  }
+
+  .chat-msg.user { flex-direction:row-reverse; }
+
+  .chat-avatar {
+    width:28px; height:28px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem; font-weight:700;
+  }
+
+  .chat-avatar.ai {
+    background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(6,182,212,0.3));
+    color:var(--accent-cyan);
+  }
+
+  .chat-avatar.user-av {
+    background: linear-gradient(135deg, rgba(129,140,248,0.3), rgba(167,139,250,0.3));
+    color:var(--accent-violet);
+  }
+
+  .chat-bubble {
+    max-width:78%; padding:8px 12px; border-radius:12px;
+    font-size:0.8rem; line-height:1.5; color:var(--text-secondary);
+  }
+
+  .chat-bubble.ai {
+    background:var(--bg-hover); border:1px solid var(--border);
+    border-top-left-radius:4px;
+  }
+
+  .chat-bubble.user {
+    background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(6,182,212,0.15));
+    border:1px solid rgba(59,130,246,0.3);
+    border-top-right-radius:4px; color:var(--text-primary);
+  }
+
+  .wellbeing-input-row {
+    padding:12px 16px; border-top:1px solid var(--border);
+    display:flex; gap:8px; align-items:center;
+  }
+
+  .wellbeing-input {
+    flex:1; background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 12px;
+    font-size:0.8rem; color:var(--text-primary); outline:none;
+    font-family:'DM Sans',sans-serif; transition:border 0.2s;
+  }
+  .wellbeing-input:focus { border-color:var(--border-bright); }
+  .wellbeing-input::placeholder { color:var(--text-muted); }
+
+  .send-btn {
+    width:34px; height:34px; border-radius:10px;
+    background: var(--gradient-main);
+    border:none; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; font-size:0.9rem; transition:all 0.2s;
+    box-shadow: var(--glow-blue);
+  }
+  .send-btn:hover { transform:scale(1.05); }
+
+  /* AI insights */
+  .insights-list { padding:0 20px 16px; display:flex; flex-direction:column; gap:8px; }
+  .insight-item {
+    display:flex; align-items:flex-start; gap:10px;
+    background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; font-size:0.79rem;
+    color:var(--text-secondary); line-height:1.4; transition:all 0.2s;
+  }
+  .insight-item:hover { border-color:var(--border-bright); }
+  .insight-icon { font-size:0.9rem; flex-shrink:0; margin-top:1px; }
+
+  /* ── LEAVE REQUEST ── */
+  .leave-form { padding:16px 20px; display:flex; flex-direction:column; gap:12px; }
+
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+  .form-group input, .form-group select, .form-group textarea {
+    background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 12px;
+    font-size:0.82rem; color:var(--text-primary); outline:none;
+    font-family:'DM Sans',sans-serif; transition:border 0.2s;
+  }
+  .form-group textarea { resize:none; height:58px; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color:var(--border-bright);
+  }
+  .form-group select option { background:var(--bg-card); }
+
+  .leave-status-row { display:flex; gap:8px; flex-wrap:wrap; padding:0 20px 16px; }
+  .leave-tag {
+    font-size:0.72rem; font-weight:600; padding:4px 10px;
+    border-radius:20px; display:flex; align-items:center; gap:5px;
+  }
+  .leave-tag.pending { background:rgba(245,158,11,0.15); color:var(--accent-amber); border:1px solid rgba(245,158,11,0.3); }
+  .leave-tag.approved { background:rgba(16,185,129,0.15); color:var(--accent-green); border:1px solid rgba(16,185,129,0.3); }
+  .leave-tag.rejected { background:rgba(244,63,94,0.15); color:var(--accent-red); border:1px solid rgba(244,63,94,0.3); }
+
+  /* ── EMPLOYEE PROFILE MODAL ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(5,11,24,0.85);
+    backdrop-filter:blur(8px); z-index:500;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+
+  .modal {
+    background: var(--bg-card);
+    border:1px solid var(--border-bright);
+    border-radius:20px; width:100%; max-width:680px;
+    max-height:88vh; overflow-y:auto;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), var(--glow-blue);
+    animation: modal-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes modal-in {
+    from { opacity:0; transform:scale(0.92) translateY(20px); }
+    to { opacity:1; transform:scale(1) translateY(0); }
+  }
+
+  .modal::-webkit-scrollbar { width:4px; }
+  .modal::-webkit-scrollbar-track { background:transparent; }
+  .modal::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+  .modal-header {
+    position:sticky; top:0; background:var(--bg-card);
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    z-index:10;
+  }
+
+  .modal-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; }
+
+  .close-btn {
+    width:30px; height:30px; border-radius:8px;
+    background:var(--bg-card2); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:1.1rem; color:var(--text-muted);
+    transition:all 0.2s;
+  }
+  .close-btn:hover { color:var(--text-primary); border-color:var(--border-bright); }
+
+  .modal-body { padding:24px; display:flex; flex-direction:column; gap:20px; }
+
+  .emp-profile-top {
+    display:flex; gap:20px; align-items:flex-start;
+  }
+
+  .emp-avatar-large {
+    width:72px; height:72px; border-radius:16px;
+    background: var(--gradient-main);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:1.6rem;
+    flex-shrink:0; box-shadow:var(--glow-blue);
+  }
+
+  .emp-info { flex:1; }
+  .emp-name { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; margin-bottom:4px; }
+  .emp-role { font-size:0.85rem; color:var(--accent-cyan); margin-bottom:8px; font-weight:500; }
+  .emp-tags { display:flex; gap:6px; flex-wrap:wrap; }
+  .emp-tag {
+    font-size:0.68rem; padding:3px 8px; border-radius:6px; font-weight:600;
+    background:rgba(59,130,246,0.15); color:var(--accent-blue);
+    border:1px solid rgba(59,130,246,0.25);
+  }
+
+  .details-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .detail-item {
+    background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px;
+  }
+  .detail-item label { font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:4px; }
+  .detail-item .val { font-size:0.88rem; color:var(--text-primary); font-weight:500; }
+
+  .salary-val {
+    font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800;
+    background: var(--gradient-main);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+
+  .section-title {
+    font-family:'Syne',sans-serif; font-size:0.82rem; font-weight:700;
+    color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;
+    margin-bottom:8px;
+  }
+
+  .achievements-list { display:flex; flex-direction:column; gap:6px; }
+  .achievement-item {
+    display:flex; gap:10px; align-items:center;
+    background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; font-size:0.8rem;
+    color:var(--text-secondary);
+  }
+  .achievement-icon { font-size:1rem; }
+
+  .resume-section {
+    background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:10px; padding:14px;
+  }
+  .resume-entry { display:flex; flex-direction:column; gap:2px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .resume-entry:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+  .resume-entry .company { font-size:0.82rem; font-weight:600; color:var(--text-primary); }
+  .resume-entry .role-date { font-size:0.75rem; color:var(--text-muted); display:flex; gap:8px; }
+  .resume-entry .desc { font-size:0.76rem; color:var(--text-secondary); margin-top:2px; }
+
+  /* ── LEAVE REQUEST SECTION ── */
+  .leave-requests-section { padding:0 20px 16px; }
+  .leave-req-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 0; border-bottom:1px solid rgba(99,179,237,0.06);
+    font-size:0.8rem;
+  }
+  .leave-req-item:last-child { border-bottom:none; }
+  .lri-avatar {
+    width:30px; height:30px; border-radius:8px;
+    background: var(--gradient-main);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:0.75rem; flex-shrink:0;
+  }
+  .lri-info { flex:1; }
+  .lri-name { font-weight:600; color:var(--text-primary); }
+  .lri-dates { font-size:0.72rem; color:var(--text-muted); margin-top:1px; }
+  .lri-actions { display:flex; gap:6px; }
+  .btn-approve, .btn-reject {
+    font-size:0.72rem; padding:4px 10px; border-radius:6px; cursor:pointer;
+    font-weight:600; border:none; transition:all 0.2s;
+  }
+  .btn-approve { background:rgba(16,185,129,0.2); color:var(--accent-green); border:1px solid rgba(16,185,129,0.3); }
+  .btn-approve:hover { background:rgba(16,185,129,0.35); }
+  .btn-reject { background:rgba(244,63,94,0.15); color:var(--accent-red); border:1px solid rgba(244,63,94,0.3); }
+  .btn-reject:hover { background:rgba(244,63,94,0.3); }
+
+  /* ── PRIMARY BUTTON ── */
+  .btn-primary {
+    background: var(--gradient-main);
+    border:none; border-radius:10px; padding:10px 20px;
+    font-family:'DM Sans',sans-serif; font-size:0.84rem; font-weight:600;
+    color:#fff; cursor:pointer; transition:all 0.2s;
+    box-shadow: var(--glow-blue); width:100%;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 0 30px rgba(59,130,246,0.35); }
+
+  .btn-secondary {
+    background:transparent; border:1px solid var(--border-bright);
+    border-radius:10px; padding:10px 20px;
+    font-family:'DM Sans',sans-serif; font-size:0.84rem; font-weight:600;
+    color:var(--text-primary); cursor:pointer; transition:all 0.2s; width:100%;
+  }
+  .btn-secondary:hover { background:var(--bg-hover); }
+
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 20px 16px; }
+
+  /* ── DIVIDER ── */
+  .divider { height:1px; background:var(--border); margin:0 20px; }
+
+  /* ── SCROLLBAR GLOBAL ── */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+  /* responsive hint */
+  @media (max-width:1200px) {
+    .stat-grid { grid-template-columns: repeat(2,1fr); }
+    .mid-grid { grid-template-columns:1fr; }
+    .bottom-grid { grid-template-columns:1fr; }
+  }
+
+  /* small glow line at top of stat cards */
+  .stat-card.blue-glow { border-top:2px solid var(--accent-blue); }
+  .stat-card.green-glow { border-top:2px solid var(--accent-green); }
+  .stat-card.red-glow { border-top:2px solid var(--accent-red); }
+  .stat-card.violet-glow { border-top:2px solid var(--accent-violet); }
+
+  .loading-dots::after {
+    content:''; animation: dot-anim 1.2s infinite;
+  }
+  @keyframes dot-anim {
+    0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">W</div>
+    WorkSphere
+  </div>
+
+  <div class="sidebar-section">Main</div>
+  <a class="nav-item active" onclick="showSection('dashboard')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Dashboard</span>
+  </a>
+  <a class="nav-item" onclick="showSection('employees')">
+    <span class="nav-icon">👥</span>
+    <span class="nav-label">Employees</span>
+  </a>
+  <a class="nav-item" onclick="showSection('leave')">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Leave Requests</span>
+    <span class="nav-badge">3</span>
+  </a>
+  <a class="nav-item" onclick="showSection('wellbeing')">
+    <span class="nav-icon">🧠</span>
+    <span class="nav-label">Wellbeing</span>
+  </a>
+
+  <div class="sidebar-section">Tools</div>
+  <a class="nav-item">
+    <span class="nav-icon">💬</span>
+    <span class="nav-label">AI Chat</span>
+  </a>
+  <a class="nav-item">
+    <span class="nav-icon">📝</span>
+    <span class="nav-label">Task Gen</span>
+  </a>
+  <a class="nav-item">
+    <span class="nav-icon">🎯</span>
+    <span class="nav-label">Meetings</span>
+  </a>
+  <a class="nav-item">
+    <span class="nav-icon">⚠️</span>
+    <span class="nav-label">Risks</span>
+  </a>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-greeting">
+      <h2>Good evening, Sarah 👋</h2>
+      <p>Friday, 27 March 2026 — Sprint Week 3 of 4</p>
+    </div>
+
+    <!-- Stress Indicator -->
+    <div class="stress-badge medium" id="stressBadge" title="Stress Level calculated from tasks, hours & meetings">
+      <div class="stress-dot"></div>
+      <span class="stress-text" id="stressLabel">Moderate Stress</span>
+      <span class="stress-val" id="stressVal">62</span>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="icon-btn" onclick="openModal('leaveModal')" title="Request Leave">🏖️</div>
+      <div class="icon-btn" title="Notifications">🔔</div>
+      <div class="icon-btn" title="Settings">⚙️</div>
+      <div class="avatar" onclick="openEmpModal(employees[1])">SJ</div>
+    </div>
+  </div>
+
+  <!-- NOTICES BAR -->
+  <div class="notices-bar">
+    <div class="notices-label">📢 Updates</div>
+    <div class="notices-scroll" id="noticesScroll">
+      <span><span class="dot">●</span> All-hands meeting Friday 4 PM — attendance mandatory</span>
+      <span><span class="dot">●</span> Q1 performance reviews due by March 31</span>
+      <span><span class="dot">●</span> New WFH policy effective April 1 — check HR portal</span>
+      <span><span class="dot">●</span> Sprint demo scheduled for March 28, 2 PM IST</span>
+      <span><span class="dot">●</span> Team velocity up 15% this sprint 🎉</span>
+      <span><span class="dot">●</span> Reminder: submit timesheets by EOD Friday</span>
+      <!-- duplicate for seamless loop -->
+      <span><span class="dot">●</span> All-hands meeting Friday 4 PM — attendance mandatory</span>
+      <span><span class="dot">●</span> Q1 performance reviews due by March 31</span>
+      <span><span class="dot">●</span> New WFH policy effective April 1 — check HR portal</span>
+      <span><span class="dot">●</span> Sprint demo scheduled for March 28, 2 PM IST</span>
+      <span><span class="dot">●</span> Team velocity up 15% this sprint 🎉</span>
+      <span><span class="dot">●</span> Reminder: submit timesheets by EOD Friday</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card blue-glow">
+        <div class="stat-top">
+          <div class="stat-icon blue">📋</div>
+          <span class="stat-badge sprint">This Sprint</span>
+        </div>
+        <div class="stat-num">24</div>
+        <div class="stat-label">Total Active Tasks</div>
+        <div class="stat-sub up">↑ 12% from last week</div>
+      </div>
+      <div class="stat-card green-glow">
+        <div class="stat-top">
+          <div class="stat-icon green">✅</div>
+          <span class="stat-badge completed">Completed</span>
+        </div>
+        <div class="stat-num">14</div>
+        <div class="stat-label">Tasks Completed</div>
+        <div class="stat-sub up">↑ 5 this week</div>
+      </div>
+      <div class="stat-card red-glow">
+        <div class="stat-top">
+          <div class="stat-icon red">⏰</div>
+          <span class="stat-badge attention">Attention</span>
+        </div>
+        <div class="stat-num">3</div>
+        <div class="stat-label">Overdue Tasks</div>
+        <div class="stat-sub warn">Requires review</div>
+      </div>
+      <div class="stat-card violet-glow">
+        <div class="stat-top">
+          <div class="stat-icon violet">💚</div>
+          <span class="stat-badge health">Health Score</span>
+        </div>
+        <div class="stat-num">78<span>/100</span></div>
+        <div class="stat-label">Team Wellness</div>
+        <div class="stat-sub warn">Monitor closely</div>
+      </div>
+    </div>
+
+    <!-- MID GRID: Chart + Wellbeing -->
+    <div class="mid-grid">
+
+      <!-- CHART CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📈</span> Hours Worked & Meetings Attended</div>
+          <span class="card-action">Export</span>
+        </div>
+        <div class="chart-tabs">
+          <div class="chart-tab active" onclick="switchChart('hours', this)">Hours Worked</div>
+          <div class="chart-tab" onclick="switchChart('meetings', this)">Meetings</div>
+          <div class="chart-tab" onclick="switchChart('combined', this)">Combined</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="mainChart" height="190"></canvas>
+        </div>
+      </div>
+
+      <!-- WELLBEING ASSISTANT -->
+      <div class="card wellbeing-card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🧠</span> Wellbeing Assistant</div>
+          <span class="card-action">Clear</span>
+        </div>
+        <div class="wellbeing-chat" id="chatBox">
+          <div class="chat-msg">
+            <div class="chat-avatar ai">AI</div>
+            <div class="chat-bubble ai">Hi Sarah! I noticed your stress index is at 62 — moderate range. Your meeting load this week is quite high (6h). Want me to suggest some async alternatives?</div>
+          </div>
+          <div class="chat-msg user">
+            <div class="chat-avatar user-av">SJ</div>
+            <div class="chat-bubble user">Yes please, I'm feeling a bit overwhelmed</div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar ai">AI</div>
+            <div class="chat-bubble ai">Totally valid. Here are 3 quick wins: ① Replace your daily standup with a Slack thread ② Move Friday review to async Loom ③ Block 2h of deep work from 10am–12pm. Want me to set these up?</div>
+          </div>
+        </div>
+        <div class="wellbeing-input-row">
+          <input class="wellbeing-input" id="chatInput" placeholder="Ask your wellbeing assistant..." onkeydown="handleChat(event)">
+          <button class="send-btn" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKLOAD TABLE + AI INSIGHTS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="card-title-icon">👥</span> Developer Workload Overview</div>
+        <span class="card-action" onclick="openEmpModal(employees[0])">View All →</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Developer</th>
+              <th>Role</th>
+              <th>Region</th>
+              <th>Active Tasks</th>
+              <th>Completed</th>
+              <th>Meeting Hours</th>
+              <th>Stress Index</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="workloadTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOTTOM GRID: AI Insights + Leave Requests -->
+    <div class="bottom-grid">
+
+      <!-- AI INSIGHTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">💡</span> AI-Powered Insights</div>
+          <span class="card-action">Refresh</span>
+        </div>
+        <div class="insights-list">
+          <div class="insight-item"><span class="insight-icon">⚠️</span> Sarah Johnson shows signs of high stress (18). Consider reducing meeting load and redistributing 2 tasks.</div>
+          <div class="insight-item"><span class="insight-icon">⚠️</span> 3 tasks are overdue. Priority review recommended for Emily Watson — 7 active tasks assigned.</div>
+          <div class="insight-item"><span class="insight-icon">✅</span> Team velocity up 15% this sprint. Mike Rodriguez completed all 3 assigned tasks ahead of schedule.</div>
+          <div class="insight-item"><span class="insight-icon">📊</span> Meeting hours increased 20% this week. Consider async communication to improve focus time.</div>
+          <div class="insight-item"><span class="insight-icon">🌱</span> David Kim has maintained a low stress score (10) for 3 consecutive weeks — strong productivity pattern.</div>
+        </div>
+      </div>
+
+      <!-- LEAVE REQUESTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📅</span> Pending Leave Requests</div>
+          <span class="card-action" onclick="openModal('leaveModal')">+ New Request</span>
+        </div>
+        <div class="leave-requests-section">
+          <div class="leave-req-item">
+            <div class="lri-avatar">AK</div>
+            <div class="lri-info">
+              <div class="lri-name">Arjun Kumar — Sick Leave</div>
+              <div class="lri-dates">March 29 – March 30 · 2 days</div>
+            </div>
+            <div class="lri-actions">
+              <button class="btn-approve" onclick="handleLeave(this,'approved')">✓</button>
+              <button class="btn-reject" onclick="handleLeave(this,'rejected')">✗</button>
+            </div>
+          </div>
+          <div class="leave-req-item">
+            <div class="lri-avatar">PM</div>
+            <div class="lri-info">
+              <div class="lri-name">Priya Mehta — Casual Leave</div>
+              <div class="lri-dates">April 3 – April 4 · 2 days</div>
+            </div>
+            <div class="lri-actions">
+              <button class="btn-approve" onclick="handleLeave(this,'approved')">✓</button>
+              <button class="btn-reject" onclick="handleLeave(this,'rejected')">✗</button>
+            </div>
+          </div>
+          <div class="leave-req-item">
+            <div class="lri-avatar">EW</div>
+            <div class="lri-info">
+              <div class="lri-name">Emily Watson — Annual Leave</div>
+              <div class="lri-dates">April 7 – April 11 · 5 days</div>
+            </div>
+            <div class="lri-actions">
+              <button class="btn-approve" onclick="handleLeave(this,'approved')">✓</button>
+              <button class="btn-reject" onclick="handleLeave(this,'rejected')">✗</button>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="padding:10px 20px;">
+          <div class="leave-status-row">
+            <span class="leave-tag pending">● 3 Pending</span>
+            <span class="leave-tag approved">● 8 Approved</span>
+            <span class="leave-tag rejected">● 2 Rejected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── LEAVE REQUEST MODAL ── -->
+<div class="modal-overlay" id="leaveModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🏖️ Submit Leave Request</div>
+      <div class="close-btn" onclick="closeModal('leaveModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="leave-form" style="padding:0;">
+        <div class="form-group">
+          <label>Leave Type</label>
+          <select>
+            <option>Sick Leave</option>
+            <option>Casual Leave</option>
+            <option>Annual Leave</option>
+            <option>Maternity / Paternity Leave</option>
+            <option>Emergency Leave</option>
+            <option>Work From Home</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" value="2026-03-29">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" value="2026-03-30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea placeholder="Briefly describe the reason for leave..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Covering Team Member</label>
+          <select>
+            <option>Alex Chen</option>
+            <option>Mike Rodriguez</option>
+            <option>David Kim</option>
+            <option>Lisa Wang</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+          <button class="btn-secondary" onclick="closeModal('leaveModal')">Cancel</button>
+          <button class="btn-primary" onclick="submitLeave()">Submit Request</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EMPLOYEE DETAIL MODAL ── -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">👤 Employee Profile</div>
+      <div class="close-btn" onclick="closeModal('empModal')">✕</div>
+    </div>
+    <div class="modal-body" id="empModalBody">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const employees = [
+  {
+    initials:'AC', name:'Alex Chen', role:'Senior Developer', region:'Singapore',
+    joined:'Jan 2022', salary:'$92,000', dept:'Engineering',
+    tasks:8, completed:5, meetings:'3.5h', stress:12,
+    posts:['Led architecture refactor for core API', 'Published 3 internal dev blogs'],
+    achievements:['🏆 Best Engineer Q3 2024','🚀 Shipped Payments v2 on time','📚 Mentored 2 junior devs'],
+    resume:[
+      { company:'WorkSphere', role:'Senior Developer', dates:'Jan 2022 – Present', desc:'Leading backend systems and API design for the core platform.' },
+      { company:'DataStream Inc.', role:'Software Engineer', dates:'Jun 2019 – Dec 2021', desc:'Built real-time data pipelines processing 10M events/day.' },
+      { company:'NexaTech', role:'Junior Developer', dates:'May 2018 – May 2019', desc:'Frontend development with React and GraphQL.' },
+    ]
+  },
+  {
+    initials:'SJ', name:'Sarah Johnson', role:'Tech Lead', region:'Bangalore, IN',
+    joined:'Mar 2021', salary:'$108,000', dept:'Engineering',
+    tasks:6, completed:4, meetings:'6h', stress:18,
+    posts:['Launched AI-powered task generation module','Onboarded 4 new engineers'],
+    achievements:['🥇 Employee of the Year 2023','🏅 Led cross-functional sprint delivery','💡 3 patents filed in AI tooling'],
+    resume:[
+      { company:'WorkSphere', role:'Tech Lead', dates:'Mar 2021 – Present', desc:'Owning technical direction and AI feature roadmap.' },
+      { company:'InnovateCo', role:'Senior Engineer', dates:'Jan 2018 – Feb 2021', desc:'Architected microservices platform serving 500K users.' },
+      { company:'StartupXYZ', role:'Full Stack Developer', dates:'Aug 2016 – Dec 2017', desc:'Built MVP from scratch — raised $2M seed round.' },
+    ]
+  },
+  {
+    initials:'MR', name:'Mike Rodriguez', role:'Frontend Dev', region:'Mexico City, MX',
+    joined:'Jun 2023', salary:'$74,000', dept:'Engineering',
+    tasks:5, completed:3, meetings:'1.5h', stress:8,
+    posts:['Redesigned dashboard UI','Wrote component library docs'],
+    achievements:['🎨 Design Collaboration Award 2024','⚡ Reduced page load by 40%'],
+    resume:[
+      { company:'WorkSphere', role:'Frontend Developer', dates:'Jun 2023 – Present', desc:'Building React component systems and UI design.' },
+      { company:'PixelForge', role:'UI Developer', dates:'Jan 2021 – May 2023', desc:'Crafted accessible, performant web interfaces for SaaS clients.' },
+    ]
+  },
+  {
+    initials:'EW', name:'Emily Watson', role:'Backend Dev', region:'London, UK',
+    joined:'Sep 2022', salary:'$81,000', dept:'Engineering',
+    tasks:7, completed:2, meetings:'3h', stress:16,
+    posts:['Optimized database query layer','Reviewed 12 pull requests this week'],
+    achievements:['🔒 Security Excellence Award','📦 Shipped 0-downtime migration'],
+    resume:[
+      { company:'WorkSphere', role:'Backend Developer', dates:'Sep 2022 – Present', desc:'Database design, REST APIs and performance optimization.' },
+      { company:'CloudSystems Ltd', role:'Backend Engineer', dates:'Jul 2019 – Aug 2022', desc:'Managed cloud infrastructure and CI/CD pipelines on AWS.' },
+    ]
+  },
+  {
+    initials:'DK', name:'David Kim', role:'DevOps', region:'Seoul, KR',
+    joined:'Nov 2021', salary:'$88,000', dept:'Infrastructure',
+    tasks:4, completed:4, meetings:'4.5h', stress:10,
+    posts:['Migrated CI/CD to GitHub Actions','Set up monitoring dashboards'],
+    achievements:['🛠️ Infrastructure Excellence 2024','📈 99.98% uptime maintained'],
+    resume:[
+      { company:'WorkSphere', role:'DevOps Engineer', dates:'Nov 2021 – Present', desc:'Cloud infrastructure, monitoring, and deployment automation.' },
+      { company:'NetCore Systems', role:'SRE', dates:'Mar 2018 – Oct 2021', desc:'Maintained 99.9% SLA across 20 production services.' },
+    ]
+  },
+  {
+    initials:'LW', name:'Lisa Wang', role:'QA Engineer', region:'Toronto, CA',
+    joined:'Feb 2023', salary:'$68,000', dept:'Quality',
+    tasks:6, completed:3, meetings:'1.5h', stress:9,
+    posts:['Automated 80% of regression suite','Created QA onboarding playbook'],
+    achievements:['🐛 Zero Critical Bug in Q4 2024','🧪 Test Coverage Champion'],
+    resume:[
+      { company:'WorkSphere', role:'QA Engineer', dates:'Feb 2023 – Present', desc:'End-to-end test automation and release quality assurance.' },
+      { company:'TestPro Agency', role:'QA Analyst', dates:'Jan 2020 – Jan 2023', desc:'Manual and automated testing for fintech clients.' },
+    ]
+  },
+];
+
+// ── STRESS FORMULA ──
+// Stress = (activeTasks * 3) + (meetingHours * 4) + (overdueBonus) — capped 0-100
+function calcStress(emp) {
+  const mh = parseFloat(emp.meetings);
+  const s = Math.min(100, Math.round(emp.tasks * 3 + mh * 4 + (emp.completed < 2 ? 10 : 0)));
+  return s;
+}
+
+// ── RENDER TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('workloadTable');
+  tbody.innerHTML = '';
+  employees.forEach(emp => {
+    const s = calcStress(emp);
+    const stressClass = s >= 15 ? 'high' : s >= 10 ? 'med' : 'low2';
+    const statusClass = s >= 18 ? 'leave' : s >= 14 ? 'away' : '';
+    tbody.innerHTML += `
+      <tr onclick="openEmpModal(employees.find(e=>e.name==='${emp.name}'))">
+        <td>${emp.name}</td>
+        <td>${emp.role}</td>
+        <td>${emp.region}</td>
+        <td>${emp.tasks}</td>
+        <td>${emp.completed}</td>
+        <td>${emp.meetings}</td>
+        <td><span class="stress-pill ${stressClass}">${s}</span></td>
+        <td><span class="status-dot ${statusClass}">Active</span></td>
+      </tr>`;
+  });
+}
+renderTable();
+
+// ── STRESS BADGE for logged-in user (Sarah) ──
+(function() {
+  const sarah = employees[1];
+  const s = calcStress(sarah);
+  document.getElementById('stressVal').textContent = s;
+  const badge = document.getElementById('stressBadge');
+  const label = document.getElementById('stressLabel');
+  badge.className = 'stress-badge';
+  if (s <= 10) { badge.classList.add('low'); label.textContent = 'Low Stress'; }
+  else if (s <= 16) { badge.classList.add('medium'); label.textContent = 'Moderate Stress'; }
+  else { label.textContent = 'High Stress'; }
+})();
+
+// ── CHART ──
+let chartInst;
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const hoursData = [7.5, 8.2, 6.8, 9.1, 7.0, 4.5, 2.0];
+const meetingsData = [2, 3, 1, 4, 3, 1, 0];
+
+function buildChart(mode) {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (chartInst) chartInst.destroy();
+
+  const grad1 = ctx.createLinearGradient(0,0,0,200);
+  grad1.addColorStop(0,'rgba(59,130,246,0.35)');
+  grad1.addColorStop(1,'rgba(59,130,246,0.02)');
+
+  const grad2 = ctx.createLinearGradient(0,0,0,200);
+  grad2.addColorStop(0,'rgba(6,182,212,0.3)');
+  grad2.addColorStop(1,'rgba(6,182,212,0.02)');
+
+  let datasets = [];
+  if (mode === 'hours' || mode === 'combined') {
+    datasets.push({
+      label:'Hours Worked',
+      data: hoursData,
+      borderColor:'#3b82f6', backgroundColor: grad1,
+      borderWidth:2.5, tension:0.45, fill:true, pointRadius:4,
+      pointBackgroundColor:'#3b82f6', pointBorderColor:'#0d1628', pointBorderWidth:2,
+    });
+  }
+  if (mode === 'meetings' || mode === 'combined') {
+    datasets.push({
+      label:'Meetings (hrs)',
+      data: meetingsData,
+      borderColor:'#06b6d4', backgroundColor: grad2,
+      borderWidth:2.5, tension:0.45, fill:true, pointRadius:4,
+      pointBackgroundColor:'#06b6d4', pointBorderColor:'#0d1628', pointBorderWidth:2,
+    });
+  }
+
+  chartInst = new Chart(ctx, {
+    type:'line',
+    data:{ labels:days, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ labels:{ color:'#7e9cc0', font:{ size:11, family:'DM Sans' }, boxWidth:10, padding:16 } } },
+      scales:{
+        x:{ grid:{ color:'rgba(99,179,237,0.07)' }, ticks:{ color:'#4a6580', font:{size:11} } },
+        y:{ grid:{ color:'rgba(99,179,237,0.07)' }, ticks:{ color:'#4a6580', font:{size:11} }, beginAtZero:true }
+      }
+    }
+  });
+}
+buildChart('hours');
+
+function switchChart(mode, el) {
+  document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  buildChart(mode);
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── EMPLOYEE MODAL ──
+function openEmpModal(emp) {
+  if (!emp) emp = employees[0];
+  const s = calcStress(emp);
+  const stressClass = s >= 15 ? 'high' : s >= 10 ? 'med' : 'low2';
+  const body = document.getElementById('empModalBody');
+  body.innerHTML = `
+    <div class="emp-profile-top">
+      <div class="emp-avatar-large">${emp.initials}</div>
+      <div class="emp-info">
+        <div class="emp-name">${emp.name}</div>
+        <div class="emp-role">${emp.role} · ${emp.dept}</div>
+        <div class="emp-tags">
+          <span class="emp-tag">${emp.region}</span>
+          <span class="emp-tag">Joined ${emp.joined}</span>
+          <span class="emp-tag">Active</span>
+        </div>
+      </div>
+    </div>
+    <div class="details-grid">
+      <div class="detail-item"><label>Department</label><div class="val">${emp.dept}</div></div>
+      <div class="detail-item"><label>Region</label><div class="val">${emp.region}</div></div>
+      <div class="detail-item"><label>Date Joined</label><div class="val">${emp.joined}</div></div>
+      <div class="detail-item"><label>Annual Salary</label><div class="salary-val">${emp.salary}</div></div>
+      <div class="detail-item"><label>Active Tasks</label><div class="val">${emp.tasks}</div></div>
+      <div class="detail-item"><label>Stress Index</label><div class="val"><span class="stress-pill ${stressClass}">${s}</span></div></div>
+    </div>
+    <div>
+      <div class="section-title">📌 Recent Posts & Contributions</div>
+      ${emp.posts.map(p=>`<div class="insight-item" style="margin-bottom:6px;"><span class="insight-icon">📝</span>${p}</div>`).join('')}
+    </div>
+    <div>
+      <div class="section-title">🏆 Achievements</div>
+      <div class="achievements-list">
+        ${emp.achievements.map(a=>`<div class="achievement-item"><span class="achievement-icon">${a.slice(0,2)}</span>${a.slice(2)}</div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div class="section-title">📄 Resume / Work History</div>
+      <div class="resume-section">
+        ${emp.resume.map(r=>`
+          <div class="resume-entry">
+            <div class="company">${r.company}</div>
+            <div class="role-date"><span>${r.role}</span><span style="color:var(--text-muted)">·</span><span>${r.dates}</span></div>
+            <div class="desc">${r.desc}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  openModal('empModal');
+}
+
+// ── LEAVE BUTTON ──
+function submitLeave() {
+  alert('✅ Leave request submitted successfully! You will be notified once approved.');
+  closeModal('leaveModal');
+}
+
+function handleLeave(btn, action) {
+  const item = btn.closest('.leave-req-item');
+  const name = item.querySelector('.lri-name').textContent;
+  item.style.opacity = '0.4';
+  item.querySelector('.lri-actions').innerHTML =
+    `<span class="leave-tag ${action === 'approved' ? 'approved' : 'rejected'}">${action === 'approved' ? '✓ Approved' : '✗ Rejected'}</span>`;
+}
+
+// ── WELLBEING CHAT ──
+const aiReplies = [
+  "That sounds tough. Have you tried the 5-4-3-2-1 grounding technique? It can help calm an overwhelmed mind quickly.",
+  "I'd recommend blocking 90 minutes of no-meeting focus time tomorrow morning. Your productivity tends to spike before noon.",
+  "Your stress pattern suggests heavy context-switching. Try batching similar tasks together — it reduces cognitive load by up to 40%.",
+  "It's okay to set boundaries. Have you considered using a 'focus mode' status on Slack during deep work sessions?",
+  "Based on your recent activity, a short walk or 5-minute breathing exercise could help restore clarity. Want a guided session?",
+  "You're doing great given the sprint pressure. Remember: sustainable pace matters more than sprint velocity.",
+];
+let replyIdx = 0;
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const chatBox = document.getElementById('chatBox');
+
+  chatBox.innerHTML += `
+    <div class="chat-msg user">
+      <div class="chat-avatar user-av">SJ</div>
+      <div class="chat-bubble user">${val}</div>
+    </div>`;
+  input.value = '';
+
+  setTimeout(() => {
+    chatBox.innerHTML += `
+      <div class="chat-msg">
+        <div class="chat-avatar ai">AI</div>
+        <div class="chat-bubble ai loading-dots">Thinking</div>
+      </div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    setTimeout(() => {
+      const msgs = chatBox.querySelectorAll('.chat-bubble.ai');
+      const last = msgs[msgs.length - 1];
+      last.textContent = aiReplies[replyIdx % aiReplies.length];
+      last.classList.remove('loading-dots');
+      replyIdx++;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }, 1200);
+  }, 200);
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function handleChat(e) { if (e.key === 'Enter') sendChat(); }
+
+function showSection(s) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>
